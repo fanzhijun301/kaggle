@@ -1,6 +1,6 @@
 # kaggle
 
-
+import math
 import numpy as np
 from sklearn import linear_model
 import sys
@@ -29,12 +29,28 @@ def read_file(src_file):
     Y = np.array(Y_arr)
     return X,Y
 
-src_file = "../data/train.csv"
-X, Y = read_file(src_file)
+def evaluate(Y_test, Y_predict):
+    logloss = 0
+    line_count = 0
+    for test, pre in zip(Y_test, Y_predict):
+        line_count += 1
+        value = pre[test-1]
+        logloss += math.log(value)
+    logloss /= -(line_count * 1.0)
+    print logloss
+    
+
+train_file = "../../kaggle/ottogroup/train1/train"
+test_file = "../../kaggle/ottogroup/train1/test"
+X_train, Y_train = read_file(train_file)
+X_test, Y_test = read_file(test_file)
+print "read ok"
 logreg = linear_model.LogisticRegression(C=1e5)
-logreg.fit(X, Y)
-Z = logreg.predict_log_proba(X)
-print X.shape
-print Z
-Z = logreg.predict_proba(X)
-print Z.shape
+logreg.fit(X_train, Y_train)
+print "train ok"
+#Y_predict = logreg.predict_log_proba(X_test)
+Y_predict = logreg.predict_proba(X_test)
+#print Y_predict
+#print Y_predict.shape
+evaluate(Y_test, Y_predict)
+
