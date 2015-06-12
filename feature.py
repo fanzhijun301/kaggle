@@ -1,5 +1,6 @@
 __author__ = 'fzj'
 
+import utils
 
 def deal_fea(head, value):
     """
@@ -16,27 +17,6 @@ def deal_fea(head, value):
 
     return r_value
 
-def split_str(line, spliter):
-    if line.find("\"") < 0: return line.split(spliter)
-    arr_list = []
-    pos = line.find(spliter)
-    while pos > 0:
-        field = line[:pos]
-        if field.find("\"") < 0:
-            arr_list.append(field)
-            line = line[pos+1:]
-            pos = line.find(spliter)
-            continue
-        npos = line.find("\"", pos)
-        pos = line.find(spliter, npos)
-        field = line[:pos]
-        arr_list.append(field)
-        line = line[pos+1:]
-        pos = line.find(spliter)
-    arr_list.append(line)
-    return arr_list
-
-
 def feature_dict(data_file, feature_dict_file):
     in_data = open(data_file, "r")
     first = True
@@ -45,14 +25,13 @@ def feature_dict(data_file, feature_dict_file):
     curr_max_index = 0
     for line in in_data:
         line = line.strip()
-
         if first == True:
             first = False
             arr = line.split(",")
             for i in range(len(arr)):
                 head_list.append(arr[i])
             continue
-        arr = split_str(line, ",")
+        arr = utils.split_str(line, ",")
         for i in range(len(arr)):
             head = head_list[i]
             value = arr[i]
@@ -81,7 +60,19 @@ def dict_load(fea_dict_file):
     in_fea_dict.close()
     return fea_dict
 
-def feature_extract(data_file, fea_dict, fea_file):
+def load_target_dict(target_file):
+    in_target = open(target_file,"r")
+    for line in in_target:
+        line = line.strip()
+        target_list = utils.split_str(line, ",");
+        break
+    target_dict = {}
+    for i in range(len(target_list)):
+        target = target_list[i]
+        target_dict[target] = i
+    return target_dict
+
+def feature_extract(data_file, fea_dict, target_dict, fea_file):
     ou_fea = open(fea_file, "w")
     in_data = open(data_file, "r")
     head_list = []
@@ -94,19 +85,29 @@ def feature_extract(data_file, fea_dict, fea_file):
             for i in range(len(arr)):
                 head_list.append(arr[i])
             continue
-        arr = split_str(line, ",")
-        fea_list = []
+        arr = utils.split_str(line, ",")
+        tmp_fea_dict = {}
+        cate_num = ""
         for i in range(len(arr)):
             head = head_list[i]
             value = arr[i]
+            if head == "Category":
+                if value not in target_dict:
+                    print "{0} not in dict".format(value)
+                    exit(0)
+                cate_num = target_dict[value]
             value = deal_fea(head, value)
+
             if value == "":continue
-            fea_name = head + "=" + value
+            fea_name = "{0}={1}".format(head,value)
             if fea_name in fea_dict:
-                index = fea_dict[fea_name]
-                fea_list.append("{0}:{1}".format(index, 1))
+                index = int(fea_dict[fea_name])
+                tmp_fea_dict[index] = "{0}:{1}".format(index, 1)
+        keys = tmp_fea_dict.keys()
+        keys.sort()
+        fea_list = [tmp_fea_dict[key] for key in keys]
         fea_str = " ".join(fea_list)
-        ou_fea.write(fea_str + "\n")
+        ou_fea.write(str(cate_num) + " " + fea_str + "\n")
     ou_fea.close()
 
 
@@ -114,7 +115,9 @@ if __name__ == "__main__":
     data_file = "D:/program/kaggle/crime/data/train1.csv"
     feadict_file = "D:/program/kaggle/crime/data/fea_dict.txt"
     train_fea_file = "D:/program/kaggle/crime/data/train_fea.txt"
+    target_file = "D:/program/kaggle/crime/data/sampleSubmission.csv"
     #feature_dict(data_file, feadict_file)
     fea_dict = dict_load(feadict_file)
-    feature_extract(data_file, fea_dict, train_fea_file)
+    target_dict = load_target_dict(target_file)
+    feature_extract(data_file, fea_dict, target_dict, train_fea_file)
     print "ok"
