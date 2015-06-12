@@ -11,7 +11,6 @@ def split_str(line, spliter):
             line = line[pos+1:]
             pos = line.find(spliter)
             continue
-        print line
         npos = line.find("\"", pos)
         pos = line.find(spliter, npos)
         field = line[:pos]
