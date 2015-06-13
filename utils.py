@@ -1,5 +1,14 @@
 __author__ = 'zhijunfan'
 
+from sklearn.externals.joblib import Memory
+from sklearn.datasets import load_svmlight_file
+mem = Memory("./mycache")
+
+@mem.cache
+def get_data(fea_file):
+    data = load_svmlight_file(fea_file)
+    return data[0], data[1]
+
 def split_str(line, spliter):
     if line.find("\"") < 0: return line.split(spliter)
     arr_list = []
